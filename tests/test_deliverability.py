@@ -3,11 +3,19 @@ import re
 
 from email_validator import EmailUndeliverableError, \
                             validate_email, caching_resolver
-from email_validator.deliverability import validate_email_deliverability
+from email_validator.deliverability import validate_email_deliverability as validate_email_deliverability_async
 
 from mocked_dns_response import MockedDnsResponseData, MockedDnsResponseDataCleanup  # noqa: F401
 
 RESOLVER = MockedDnsResponseData.create_resolver()
+
+
+def validate_email_deliverability(*args, **kwargs):
+    try:
+        validate_email_deliverability_async(*args, **kwargs).send(None)
+        raise RuntimeError("validate_email_deliverability did not run synchronously.")
+    except StopIteration as e:
+        return e.value
 
 
 def test_deliverability_found():
